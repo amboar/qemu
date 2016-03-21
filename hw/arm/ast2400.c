@@ -18,11 +18,14 @@
 #define AST2400_UART_5_BASE      0x00184000
 #define AST2400_IOMEM_SIZE       0x00200000
 #define AST2400_IOMEM_BASE       0x1E600000
+#define CDNS_GEM_ADDR            0x1E680000
 #define AST2400_VIC_BASE         0x1E6C0000
 #define AST2400_TIMER_BASE       0x1E782000
 
 static const int uart_irqs[] = { 9, 32, 33, 34, 10 };
 static const int timer_irqs[] = { 16, 17, 18, 35, 36, 37, 38, 39, };
+
+#define CDNS_GEM_IRQ 3
 
 /*
  * IO handlers: simply catch any reads/writes to IO addresses that aren't
@@ -58,6 +61,9 @@ static void ast2400_init(Object *obj)
     object_initialize(&s->vic, sizeof(s->vic), TYPE_ASPEED_VIC);
     object_property_add_child(obj, "vic", OBJECT(&s->vic), NULL);
     qdev_set_parent_bus(DEVICE(&s->vic), sysbus_get_default());
+
+    object_initialize(&s->gem, sizeof(s->gem), TYPE_CADENCE_GEM);
+    qdev_set_parent_bus(DEVICE(&s->gem), sysbus_get_default());
 
     object_initialize(&s->timerctrl, sizeof(s->timerctrl), TYPE_ASPEED_TIMER);
     object_property_add_child(obj, "timerctrl", OBJECT(&s->timerctrl), NULL);
@@ -99,6 +105,18 @@ static void ast2400_realize(DeviceState *dev, Error **errp)
         qemu_irq irq = qdev_get_gpio_in(DEVICE(&s->vic), timer_irqs[i]);
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->timerctrl), i, irq);
     }
+
+    /* FIXME: Add existing ethernet controller - Cadence GEM */
+    qemu_check_nic_model(&nd_table[0], TYPE_CADENCE_GEM);
+    qdev_set_nic_properties(DEVICE(&s->gem), &nd_table[0]);
+    object_property_set_bool(OBJECT(&s->gem), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gem), 0, CDNS_GEM_ADDR);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gem), 0,
+                       qdev_get_gpio_in(DEVICE(&s->vic), CDNS_GEM_IRQ));
 
     /* UART - attach an 8250 to the IO space as our UART5 */
     if (serial_hds[0]) {
