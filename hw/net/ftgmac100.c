@@ -613,7 +613,7 @@ static void ftgmac100_realize(DeviceState *dev, Error **errp)
     qemu_format_nic_info_str(qemu_get_queue(s->nic), s->conf.macaddr.a);
 
     s->qtimer = qemu_new_timer_ms(vm_clock, ftgmac100_watchdog, s);
-    s->dma = &dma_context_memory;
+    s->dma = &address_space_memory;
     s->bh = qemu_bh_new(ftgmac100_bh, s);
 
     ftgmac100_chip_reset(s);
