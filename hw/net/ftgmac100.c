@@ -291,7 +291,7 @@ static ssize_t ftgmac100_receive(NetClientState *nc,
     MAC_REG32(s, REG_ISR) |= ISR_RPKT_OK | ISR_RPKT_FINISH;
     ftgmac100_update_irq(s);
 
-    return (ssize_t)((uint32_t)ptr - (uint32_t)buf);
+    return ptr - buf;
 }
 
 static void
