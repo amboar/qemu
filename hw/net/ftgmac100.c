@@ -665,20 +665,4 @@ static void ftgmac100_register_types(void)
     type_register_static(&ftgmac100_info);
 }
 
-/* Legacy helper function.  Should go away when machine config files are
-   implemented.  */
-void ftgmac100_init(NICInfo *nd, uint32_t base, qemu_irq irq)
-{
-    DeviceState *dev;
-    SysBusDevice *s;
-
-    qemu_check_nic_model(nd, TYPE_FTGMAC100);
-    dev = qdev_create(NULL, TYPE_FTGMAC100);
-    qdev_set_nic_properties(dev, nd);
-    qdev_init_nofail(dev);
-    s = SYS_BUS_DEVICE(dev);
-    sysbus_mmio_map(s, 0, base);
-    sysbus_connect_irq(s, 0, irq);
-}
-
 type_init(ftgmac100_register_types)
