@@ -7,8 +7,8 @@
  * This file is licensed under GNU GPL v2+.
  */
 
-#ifndef HW_ARM_FTGMAC100_H
-#define HW_ARM_FTGMAC100_H
+#ifndef FTGMAC100_REGS_H
+#define FTGMAC100_REGS_H
 
 #define REG_ISR             0x00    /* interrupt status */
 #define REG_IMR             0x04    /* interrupt mask */
@@ -234,4 +234,4 @@ typedef struct Ftgmac100TXD {
     uint32_t buf;
 } __attribute__ ((aligned (16))) Ftgmac100TXD;
 
-#endif    /* #ifndef HW_ARM_FTGMAC100_H */
+#endif    /* #ifndef FTGMAC100_REGS_H */

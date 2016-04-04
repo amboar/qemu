@@ -7,6 +7,7 @@
  * This file is licensed under GNU GPL v2+.
  */
 
+#include "qemu/osdep.h"
 #include "hw/sysbus.h"
 #include "qemu/timer.h"
 #include "sysemu/sysemu.h"
@@ -14,6 +15,8 @@
 #include "net/net.h"
 
 #include "hw/net/ftgmac100.h"
+
+#include "ftgmac100_regs.h"
 
 #ifndef DEBUG
 #define DEBUG   0
@@ -25,43 +28,6 @@
             fprintf(stderr, fmt , ## __VA_ARGS__); \
         } \
     } while (0)
-
-#define TYPE_FTGMAC100  "ftgmac100"
-
-#define CFG_MAXFRMLEN   9220    /* Max. frame length */
-#define CFG_REGSIZE     (0x100 / 4)
-
-typedef struct Ftgmac100State {
-    /*< private >*/
-    SysBusDevice parent;
-
-    /*< public >*/
-    MemoryRegion mmio;
-
-    QEMUBH *bh;
-    qemu_irq irq;
-    NICState *nic;
-    NICConf conf;
-    DMAContext *dma;
-    QEMUTimer *qtimer;
-
-    bool phycr_rd;
-
-    struct {
-        uint8_t  buf[CFG_MAXFRMLEN];
-        uint32_t len;
-    } txbuff;
-
-    uint32_t hptx_idx;
-    uint32_t tx_idx;
-    uint32_t rx_idx;
-
-    /* HW register cache */
-    uint32_t regs[CFG_REGSIZE];
-} Ftgmac100State;
-
-#define FTGMAC100(obj) \
-    OBJECT_CHECK(Ftgmac100State, obj, TYPE_FTGMAC100)
 
 #define MAC_REG32(s, off) \
     ((s)->regs[(off) / 4])
