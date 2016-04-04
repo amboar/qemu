@@ -32,6 +32,14 @@
 #define MAC_REG32(s, off) \
     ((s)->regs[(off) / 4])
 
+static inline uint8_t bitrev8(uint8_t value)
+{
+    value = (value & 0xF0) >> 4 | (value & 0x0F) << 4;
+    value = (value & 0xCC) >> 2 | (value & 0x33) << 2;
+    value = (value & 0xAA) >> 1 | (value & 0x55) << 1;
+    return value;
+}
+
 static int ftgmac100_mcast_hash(Ftgmac100State *s, const uint8_t *data)
 {
 #define CRCPOLY_BE    0x04c11db7
