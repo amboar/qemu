@@ -608,7 +608,7 @@ static void ftgmac100_realize(DeviceState *dev, Error **errp)
     Ftgmac100State *s = FTGMAC100(dev);
     SysBusDevice *sbd = SYS_BUS_DEVICE(dev);
 
-    memory_region_init_io(&s->mmio, &mmio_ops, s, TYPE_FTGMAC100, 0x1000);
+    memory_region_init_io(&s->mmio, OBJECT(s), &mmio_ops, s, TYPE_FTGMAC100, 0x1000);
     sysbus_init_mmio(sbd, &s->mmio);
     sysbus_init_irq(sbd, &s->irq);
 
@@ -616,7 +616,7 @@ static void ftgmac100_realize(DeviceState *dev, Error **errp)
     s->nic = qemu_new_nic(&net_ftgmac100_info,
                           &s->conf,
                           object_get_typename(OBJECT(dev)),
-                          sbd->qdev.id,
+                          dev->id,
                           s);
     qemu_format_nic_info_str(qemu_get_queue(s->nic), s->conf.macaddr.a);
 
@@ -651,7 +651,6 @@ static void ftgmac100_class_init(ObjectClass *klass, void *data)
     dc->props = ftgmac100_properties;
     dc->reset = ftgmac100_reset;
     dc->realize = ftgmac100_realize;
-    dc->no_user = 1;
 }
 
 static const TypeInfo ftgmac100_info = {
