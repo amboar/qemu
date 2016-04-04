@@ -153,7 +153,7 @@ static int ftgmac100_can_receive(NetClientState *nc)
         ftgmac100_read_rxdesc(s, off, &rxd);
         ret = !rxd.owner;
         if (!ret) {
-            qemu_mod_timer(s->qtimer, qemu_get_clock_ms(vm_clock) + 10);
+            timer_mod(s->qtimer, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + 10);
         }
     }
 
@@ -428,7 +428,7 @@ static void ftgmac100_chip_reset(Ftgmac100State *s)
     }
 
     if (s->qtimer) {
-        qemu_del_timer(s->qtimer);
+        timer_del(s->qtimer);
     }
 
     ftgmac100_update_irq(s);
@@ -536,7 +536,7 @@ ftgmac100_mem_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 qemu_flush_queued_packets(qemu_get_queue(s->nic));
             }
         } else {
-            qemu_del_timer(s->qtimer);
+            timer_del(s->qtimer);
         }
         break;
     case REG_MACSR:
@@ -620,7 +620,7 @@ static void ftgmac100_realize(DeviceState *dev, Error **errp)
                           s);
     qemu_format_nic_info_str(qemu_get_queue(s->nic), s->conf.macaddr.a);
 
-    s->qtimer = qemu_new_timer_ms(vm_clock, ftgmac100_watchdog, s);
+    s->qtimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, ftgmac100_watchdog, s);
     s->dma = &address_space_memory;
     s->bh = qemu_bh_new(ftgmac100_bh, s);
 
