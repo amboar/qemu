@@ -15,6 +15,7 @@
 #include "hw/arm/arm.h"
 #include "hw/intc/aspeed_vic.h"
 #include "hw/timer/aspeed_timer.h"
+#include "hw/net/ftgmac100.h"
 
 typedef struct AST2400State {
     /*< private >*/
@@ -25,6 +26,7 @@ typedef struct AST2400State {
     MemoryRegion iomem;
     AspeedVICState vic;
     AspeedTimerCtrlState timerctrl;
+    Ftgmac100State ftgmac100;
 } AST2400State;
 
 #define TYPE_AST2400 "ast2400"

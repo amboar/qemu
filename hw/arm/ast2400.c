@@ -21,11 +21,14 @@
 #define AST2400_UART_5_BASE      0x00184000
 #define AST2400_IOMEM_SIZE       0x00200000
 #define AST2400_IOMEM_BASE       0x1E600000
+#define AST2400_MAC1_BASE        0x1E660000
 #define AST2400_VIC_BASE         0x1E6C0000
 #define AST2400_TIMER_BASE       0x1E782000
 
 static const int uart_irqs[] = { 9, 32, 33, 34, 10 };
 static const int timer_irqs[] = { 16, 17, 18, 35, 36, 37, 38, 39, };
+
+#define AST2400_MAC1_IRQ 2
 
 /*
  * IO handlers: simply catch any reads/writes to IO addresses that aren't
@@ -61,6 +64,9 @@ static void ast2400_init(Object *obj)
     object_initialize(&s->vic, sizeof(s->vic), TYPE_ASPEED_VIC);
     object_property_add_child(obj, "vic", OBJECT(&s->vic), NULL);
     qdev_set_parent_bus(DEVICE(&s->vic), sysbus_get_default());
+
+    object_initialize(&s->ftgmac100, sizeof(s->ftgmac100), TYPE_FTGMAC100);
+    qdev_set_parent_bus(DEVICE(&s->ftgmac100), sysbus_get_default());
 
     object_initialize(&s->timerctrl, sizeof(s->timerctrl), TYPE_ASPEED_TIMER);
     object_property_add_child(obj, "timerctrl", OBJECT(&s->timerctrl), NULL);
@@ -102,6 +108,17 @@ static void ast2400_realize(DeviceState *dev, Error **errp)
         qemu_irq irq = qdev_get_gpio_in(DEVICE(&s->vic), timer_irqs[i]);
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->timerctrl), i, irq);
     }
+
+    qemu_check_nic_model(&nd_table[0], TYPE_FTGMAC100);
+    qdev_set_nic_properties(DEVICE(&s->ftgmac100), &nd_table[0]);
+    object_property_set_bool(OBJECT(&s->ftgmac100), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->ftgmac100), 0, AST2400_MAC1_BASE);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->ftgmac100), 0,
+                       qdev_get_gpio_in(DEVICE(&s->vic), AST2400_MAC1_IRQ));
 
     /* UART - attach an 8250 to the IO space as our UART5 */
     if (serial_hds[0]) {
