@@ -30,6 +30,7 @@
 #include "qemu/osdep.h"
 #include <inttypes.h>
 #include "hw/intc/aspeed_vic.h"
+#include "hw/qdev-properties.h"
 #include "qemu/bitops.h"
 #include "trace.h"
 
@@ -38,6 +39,13 @@
 #define AVIC_L_MASK 0xFFFFFFFFU
 #define AVIC_H_MASK 0x0007FFFFU
 #define AVIC_EVENT_W_MASK (0x78000ULL << 32)
+
+static Property aspeed_vic_properties[] = {
+	DEFINE_PROP_UINT64("sense", AspeedVICState, sense_rst, -1),
+	DEFINE_PROP_UINT64("dual_edge", AspeedVICState, dual_edge_rst, -1),
+	DEFINE_PROP_UINT64("event", AspeedVICState, event_rst, -1),
+	DEFINE_PROP_END_OF_LIST()
+};
 
 static void aspeed_vic_update(AspeedVICState *s)
 {
@@ -276,9 +284,9 @@ static void aspeed_vic_reset(DeviceState *dev)
     s->select = 0;
     s->enable = 0;
     s->trigger = 0;
-    s->sense = 0x1F07FFF8FFFFULL;
-    s->dual_edge = 0xF800070000ULL;
-    s->event = 0x5F07FFF8FFFFULL;
+    s->sense = s->sense_rst;
+    s->dual_edge = s->dual_edge_rst;
+    s->event = s->event_rst;
 }
 
 #define AVIC_IO_REGION_SIZE 0x20000
@@ -322,6 +330,7 @@ static void aspeed_vic_class_init(ObjectClass *klass, void *data)
     dc->reset = aspeed_vic_reset;
     dc->desc = "ASPEED Interrupt Controller (New)";
     dc->vmsd = &vmstate_aspeed_vic;
+    dc->props = aspeed_vic_properties;
 }
 
 static const TypeInfo aspeed_vic_info = {

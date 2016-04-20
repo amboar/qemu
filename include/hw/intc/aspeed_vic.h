@@ -37,12 +37,15 @@ typedef struct AspeedVICState {
 
     /* 0=edge, 1=level */
     uint64_t sense;
+    uint64_t sense_rst;
 
     /* 0=single-edge, 1=dual-edge */
     uint64_t dual_edge;
+    uint64_t dual_edge_rst;
 
     /* 0=low-sensitive/falling-edge, 1=high-sensitive/rising-edge */
     uint64_t event;
+    uint64_t event_rst;
 } AspeedVICState;
 
 #endif /* ASPEED_VIC_H */

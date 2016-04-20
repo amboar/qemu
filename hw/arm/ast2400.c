@@ -80,6 +80,16 @@ static void ast2400_realize(DeviceState *dev, Error **errp)
             &s->iomem, -1);
 
     /* VIC */
+    object_property_set_int(OBJECT(&s->vic),
+			    0x00001F07FFF8FFFFULL, "sense", &err);
+    object_property_set_int(OBJECT(&s->vic),
+			    0x000000F800070000ULL, "dual_edge", &err);
+    object_property_set_int(OBJECT(&s->vic),
+			    0x00005F07FFF8FFFFULL, "event", &err);
+    if (err) {
+	    error_propagate(errp, err);
+	    return;
+    }
     object_property_set_bool(OBJECT(&s->vic), true, "realized", &err);
     if (err) {
         error_propagate(errp, err);
