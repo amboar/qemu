@@ -22,7 +22,9 @@
 #define TO_REG(o) (o >> 2)
 
 #define SCU00 TO_REG(0x00)
+#define SCU08 TO_REG(0x08)
 #define SCU0C TO_REG(0x0C)
+#define SCU24 TO_REG(0x24)
 #define SCU2C TO_REG(0x2C)
 #define SCU3C TO_REG(0x3C)
 #define SCU70 TO_REG(0x70)
@@ -48,7 +50,9 @@ static uint64_t aspeed_scu_read(void *opaque, hwaddr offset, unsigned size)
 
     switch (offset) {
         case 0x00:
+        case 0x08:
         case 0x0C:
+        case 0x24:
         case 0x2C:
         case 0x3C:
         case 0x70:
@@ -119,10 +123,12 @@ static void aspeed_scu_reset(DeviceState *dev)
     AspeedSCUState *s = ASPEED_SCU(dev);
 
     s->regs[SCU00] = 0;
+    s->regs[SCU08] = s->scu08_rst;
     s->regs[SCU0C] = s->scu0c_rst;
+    s->regs[SCU24] = s->scu24_rst;
     s->regs[SCU2C] = 0x00000010U;
     s->regs[SCU3C] = 0x00000001U;
-    s->regs[SCU70] = 0;
+    s->regs[SCU70] = s->scu70_rst;
     s->regs[SCU7C] = 0x02000303U;
     s->regs[SCU80] = 0;
     s->regs[SCU84] = 0x0000F000U;
@@ -145,7 +151,11 @@ static void aspeed_scu_realize(DeviceState *dev, Error **errp)
 }
 
 static Property aspeed_scu_props[] = {
+    DEFINE_PROP_UINT32("scu08", AspeedSCUState, scu08_rst, 0xF3F40000U),
     DEFINE_PROP_UINT32("scu0c", AspeedSCUState, scu0c_rst, 0),
+    DEFINE_PROP_UINT32("scu24", AspeedSCUState, scu24_rst, 0),
+    DEFINE_PROP_UINT32("scu70", AspeedSCUState, scu70_rst, 0),
+    DEFINE_PROP_UINT32("scu7c", AspeedSCUState, scu7c_rst, 0),
     DEFINE_PROP_UINT32("scu88", AspeedSCUState, scu88_rst, 0),
     DEFINE_PROP_UINT32("scu8c", AspeedSCUState, scu8c_rst, 0),
     DEFINE_PROP_UINT32("scu9c", AspeedSCUState, scu9c_rst, 0),
