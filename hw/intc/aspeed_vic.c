@@ -36,10 +36,6 @@
 
 #define AVIC_NEW_BASE_OFFSET 0x80
 
-#define AVIC_L_MASK 0xFFFFFFFFU
-#define AVIC_H_MASK 0x0007FFFFU
-#define AVIC_EVENT_W_MASK (0x78000ULL << 32)
-
 static Property aspeed_vic_properties[] = {
 	DEFINE_PROP_UINT64("sense", AspeedVICState, sense_rst, -1),
 	DEFINE_PROP_UINT64("dual_edge", AspeedVICState, dual_edge_rst, -1),
@@ -67,7 +63,8 @@ static void aspeed_vic_set_irq(void *opaque, int irq, int level)
     bool raise;
     AspeedVICState *s = (AspeedVICState *)opaque;
 
-    if (irq > ASPEED_VIC_NR_IRQS) {
+    /* -1, as irqs start at zero */
+    if (irq > (ASPEED_VIC_NR_IRQS - 1)) {
         qemu_log_mask(LOG_GUEST_ERROR, "%s: Invalid interrupt number: %d\n",
                       __func__, irq);
         return;
@@ -181,7 +178,6 @@ static uint64_t aspeed_vic_read(void *opaque, hwaddr offset, unsigned size)
 static void aspeed_vic_write(void *opaque, hwaddr offset, uint64_t data,
                              unsigned size)
 {
-    const bool high = !!(offset & 0x4);
     hwaddr n_offset = (offset & ~0x4);
     AspeedVICState *s = (AspeedVICState *)opaque;
 
@@ -196,25 +192,9 @@ static void aspeed_vic_write(void *opaque, hwaddr offset, uint64_t data,
     n_offset -= AVIC_NEW_BASE_OFFSET;
     trace_aspeed_vic_write(offset, size, data);
 
-    /* Given we have members using separate enable/clear registers, deposit64()
-     * isn't quite the tool for the job. Instead, relocate the incoming bits to
-     * the required bit offset based on the provided access address
-     */
-    if (high) {
-        data &= AVIC_H_MASK;
-        data <<= 32;
-    } else {
-        data &= AVIC_L_MASK;
-    }
-
     switch (n_offset) {
     case 0x18: /* Interrupt Selection */
         /* Register has deposit64() semantics - overwrite requested 32 bits */
-        if (high) {
-            s->select &= AVIC_L_MASK;
-        } else {
-            s->select &= ((uint64_t) AVIC_H_MASK) << 32;
-        }
         s->select |= data;
         break;
     case 0x20: /* Interrupt Enable */
@@ -232,16 +212,7 @@ static void aspeed_vic_write(void *opaque, hwaddr offset, uint64_t data,
                       "IRQs to be cleared: 0x%016" PRIx64 "\n", __func__, data);
         break;
     case 0x50: /* Interrupt Event */
-        /* Register has deposit64() semantics - overwrite the top four valid
-         * IRQ bits, as only the top four IRQs (GPIOs) can change their event
-         * type */
-        if (high) {
-            s->event &= ~AVIC_EVENT_W_MASK;
-            s->event |= (data & AVIC_EVENT_W_MASK);
-        } else {
-            qemu_log_mask(LOG_GUEST_ERROR,
-                          "Ignoring invalid write to interrupt event register");
-        }
+	s->event |= data;
         break;
     case 0x58: /* Edge Triggered Interrupt Clear */
         s->raw &= ~(data & ~s->sense);

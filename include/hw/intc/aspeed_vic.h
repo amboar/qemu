@@ -18,7 +18,7 @@
 #define TYPE_ASPEED_VIC "aspeed.vic"
 #define ASPEED_VIC(obj) OBJECT_CHECK(AspeedVICState, (obj), TYPE_ASPEED_VIC)
 
-#define ASPEED_VIC_NR_IRQS 51
+#define ASPEED_VIC_NR_IRQS 64
 
 typedef struct AspeedVICState {
     /*< private >*/
