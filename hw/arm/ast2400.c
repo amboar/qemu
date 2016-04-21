@@ -119,6 +119,10 @@ static void ast2400_realize(DeviceState *dev, Error **errp)
     }
 
     /* SCU */
+    object_property_set_int(OBJECT(&s->scu), 0x19FC3E8BU, "scu0c", &err);
+    object_property_set_int(OBJECT(&s->scu), 0x01000000U, "scu88", &err);
+    object_property_set_int(OBJECT(&s->scu), 0x000000FFU, "scu8c", &err);
+    object_property_set_int(OBJECT(&s->scu), 0x003FFFF3U, "scu9c", &err);
     object_property_set_bool(OBJECT(&s->scu), true, "realized", &err);
     if (err) {
         error_propagate(errp, err);
