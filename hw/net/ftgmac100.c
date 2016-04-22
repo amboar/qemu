@@ -13,21 +13,11 @@
 #include "sysemu/sysemu.h"
 #include "sysemu/dma.h"
 #include "net/net.h"
+#include "trace.h"
 
 #include "hw/net/ftgmac100.h"
 
 #include "ftgmac100_regs.h"
-
-#ifndef DEBUG
-#define DEBUG   0
-#endif
-
-#define DPRINTF(fmt, ...) \
-    do { \
-        if (DEBUG) { \
-            fprintf(stderr, fmt , ## __VA_ARGS__); \
-        } \
-    } while (0)
 
 #define MAC_REG32(s, off) \
     ((s)->regs[(off) / 4])
@@ -137,7 +127,11 @@ ftgmac100_write_rxdesc(Ftgmac100State *s, hwaddr addr, Ftgmac100RXD *desc)
 
 static void ftgmac100_update_irq(Ftgmac100State *s)
 {
-    qemu_set_irq(s->irq, !!(MAC_REG32(s, REG_ISR) & MAC_REG32(s, REG_IMR)));
+    const uint32_t isr = MAC_REG32(s, REG_ISR);
+    const uint32_t imr = MAC_REG32(s, REG_IMR);
+    const uint32_t set = !!(isr & imr);
+    trace_ftgmac100_irq_state(isr, imr, set);
+    qemu_set_irq(s->irq, set);
 }
 
 static int ftgmac100_can_receive(NetClientState *nc)
@@ -193,7 +187,7 @@ static ssize_t ftgmac100_receive(NetClientState *nc,
     }
     if (ftl) {
         MAC_REG32(s, REG_RXCRCFTL) = (MAC_REG32(s, REG_RXCRCFTL) + 1) & 0xffff;
-        DPRINTF("ftgmac100_receive: frame too long, drop it\n");
+        trace_ftgmac100_rx_validate("frame too long, drop it");
         return -1;
     }
 
@@ -204,7 +198,7 @@ static ssize_t ftgmac100_receive(NetClientState *nc,
         MAC_REG32(s, REG_RXBCST) += 1;
         if (!(MAC_REG32(s, REG_MACCR) & MACCR_RCV_ALL)
             && !(MAC_REG32(s, REG_MACCR) & MACCR_RX_BROADPKT)) {
-            DPRINTF("ftgmac100_receive: bcst filtered\n");
+            trace_ftgmac100_rx_filtered("ftgmac100_receive: bcst filtered");
             return -1;
         }
     } else {
@@ -220,13 +214,13 @@ static ssize_t ftgmac100_receive(NetClientState *nc,
             && !(MAC_REG32(s, REG_MACCR) & MACCR_RX_MULTIPKT)) {
             int hash, id;
             if (!(MAC_REG32(s, REG_MACCR) & MACCR_HT_MULTI_EN)) {
-                DPRINTF("ftgmac100_receive: mcst filtered\n");
+                trace_ftgmac100_rx_filtered("ftgmac100_receive: mcst filtered");
                 return -1;
             }
             hash = ftgmac100_mcast_hash(s, buf);
             id = (hash >= 32) ? 1 : 0;
             if (!(MAC_REG32(s, REG_MHASH0 + id * 4) & BIT(hash % 32))) {
-                DPRINTF("ftgmac100_receive: mcst filtered\n");
+                trace_ftgmac100_rx_filtered("ftgmac100_receive: mcst filtered");
                 return -1;
             }
         }
@@ -246,7 +240,7 @@ static ssize_t ftgmac100_receive(NetClientState *nc,
         ftgmac100_read_rxdesc(s, off, &rxd);
         if (rxd.owner) {
             MAC_REG32(s, REG_ISR) |= ISR_NORXBUF;
-            DPRINTF("ftgmac100: out of rxd!?\n");
+            trace_ftgmac100_rx_debug("ftgmac100: out of rxd!?");
             return -1;
         }
         len = size > rxd.len ? rxd.len : size;

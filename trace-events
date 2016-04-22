@@ -1909,3 +1909,9 @@ aspeed_vic_update_fiq(int flags) "Raising FIQ: %d"
 aspeed_vic_update_irq(int flags) "Raising IRQ: %d"
 aspeed_vic_read(uint64_t offset, unsigned size, uint32_t value) "From 0x%" PRIx64 " of size %u: 0x%" PRIx32
 aspeed_vic_write(uint64_t offset, unsigned size, uint32_t data) "To 0x%" PRIx64 " of size %u: 0x%" PRIx32
+
+# hw/net/ftgmac100.c
+ftgmac100_rx_validate(const char *msg) "%s"
+ftgmac100_rx_filtered(const char *msg) "%s"
+ftgmac100_rx_debug(const char *msg) "%s"
+ftgmac100_irq_state(uint32_t isr, uint32_t imr, uint32_t set) "isr=0x%" PRIx32 ", imr=0x%" PRIx32 ", set=%" PRIu32
