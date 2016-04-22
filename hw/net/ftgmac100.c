@@ -243,30 +243,32 @@ static ssize_t ftgmac100_receive(NetClientState *nc,
             trace_ftgmac100_rx_debug("ftgmac100: out of rxd!?");
             return -1;
         }
-        len = size > rxd.len ? rxd.len : size;
-        rxd.frs = (ptr == buf) ? 1 : 0;
+        if (rxd.len) {
+            len = size > rxd.len ? rxd.len : size;
+            rxd.frs = (ptr == buf) ? 1 : 0;
 
-        if (rxd.frs && proto == 0x8100 && len >= 18) {
-            rxd.vlan = 1;
-            rxd.vlantag = (buf[14] << 8) | buf[15];
-            if (MAC_REG32(s, REG_MACCR) & MACCR_VLAN_RM) {
-                /* copy src/dst mac address */
-                dma_memory_write(s->dma, rxd.buf, ptr, 12);
-                /* copy proto + payload, the VLAN tag is ignored */
-                dma_memory_write(s->dma, rxd.buf + 12, ptr + 16, len - 16);
+            if (rxd.frs && proto == 0x8100 && len >= 18) {
+                rxd.vlan = 1;
+                rxd.vlantag = (buf[14] << 8) | buf[15];
+                if (MAC_REG32(s, REG_MACCR) & MACCR_VLAN_RM) {
+                    /* copy src/dst mac address */
+                    dma_memory_write(s->dma, rxd.buf, ptr, 12);
+                    /* copy proto + payload, the VLAN tag is ignored */
+                    dma_memory_write(s->dma, rxd.buf + 12, ptr + 16, len - 16);
+                } else {
+                    dma_memory_write(s->dma, rxd.buf, ptr, len);
+                }
             } else {
+                rxd.vlan = 0;
+                rxd.vlantag = 0;
                 dma_memory_write(s->dma, rxd.buf, ptr, len);
             }
-        } else {
-            rxd.vlan = 0;
-            rxd.vlantag = 0;
-            dma_memory_write(s->dma, rxd.buf, ptr, len);
+            ptr  += len;
+            size -= len;
+            rxd.len = len;
         }
-        ptr  += len;
-        size -= len;
 
         rxd.lrs = (size <= 0) ? 1 : 0;
-        rxd.len = len;
         rxd.bcast = bcst;
         rxd.mcast = mcst;
         rxd.owner = 1;
