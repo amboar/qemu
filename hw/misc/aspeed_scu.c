@@ -92,6 +92,8 @@ static void aspeed_scu_write(void *opaque, hwaddr offset, uint64_t data,
         return;
     }
 
+    trace_aspeed_scu_write(offset, size, data);
+
     switch (offset) {
         case 0x00:
         case 0x04:
