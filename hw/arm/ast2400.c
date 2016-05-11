@@ -17,6 +17,7 @@
 #include "exec/address-spaces.h"
 #include "hw/arm/ast2400.h"
 #include "hw/char/serial.h"
+#include "hw/boards.h"
 
 #define AST2400_UART_5_BASE      0x00184000
 #define AST2400_IOMEM_SIZE       0x00200000
@@ -77,6 +78,12 @@ static void ast2400_realize(DeviceState *dev, Error **errp)
     int i;
     AST2400State *s = AST2400(dev);
     Error *err = NULL;
+
+    /* SRAM */
+    memory_region_allocate_system_memory(&s->sram, NULL, "ast2400.sram",
+                                         AST2400_SRAM_SIZE);
+    memory_region_add_subregion(get_system_memory(), AST2400_SRAM_BASE,
+                                &s->sram);
 
     /* IO space */
     memory_region_init_io(&s->iomem, NULL, &ast2400_io_ops, NULL,

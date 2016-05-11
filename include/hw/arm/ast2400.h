@@ -23,6 +23,7 @@ typedef struct AST2400State {
 
     /*< public >*/
     ARMCPU *cpu;
+    MemoryRegion sram;
     MemoryRegion iomem;
     AspeedVICState vic;
     AspeedTimerCtrlState timerctrl;
@@ -33,5 +34,7 @@ typedef struct AST2400State {
 #define AST2400(obj) OBJECT_CHECK(AST2400State, (obj), TYPE_AST2400)
 
 #define AST2400_SDRAM_BASE       0x40000000
+#define AST2400_SRAM_BASE        0x1E720000
+#define AST2400_SRAM_SIZE        0x00008000 /* 32kB */
 
 #endif /* AST2400_H */
