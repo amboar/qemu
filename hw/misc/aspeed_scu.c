@@ -2,8 +2,10 @@
  * ASPEED System Control Unit
  *
  * Andrew Jeffery <andrew@aj.id.au>
+ * Teddy Reed <reed@fb.com>
  *
  * Copyright 2016 IBM Corp.
+ * Copyright (C) 2016-Present Facebook, Inc.
  *
  * This code is licensed under the GPL version 2 or later.  See
  * the COPYING file in the top-level directory.
@@ -22,11 +24,13 @@
 #define TO_REG(o) (o >> 2)
 
 #define SCU00 TO_REG(0x00)
+#define SCU04 TO_REG(0x04)
 #define SCU08 TO_REG(0x08)
 #define SCU0C TO_REG(0x0C)
 #define SCU24 TO_REG(0x24)
 #define SCU2C TO_REG(0x2C)
 #define SCU3C TO_REG(0x3C)
+#define SCU40 TO_REG(0x40)
 #define SCU70 TO_REG(0x70)
 #define SCU7C TO_REG(0x7C)
 #define SCU80 TO_REG(0x80)
@@ -50,10 +54,12 @@ static uint64_t aspeed_scu_read(void *opaque, hwaddr offset, unsigned size)
 
     switch (offset) {
         case 0x00:
+        case 0x04:
         case 0x08:
         case 0x0C:
         case 0x24:
         case 0x2C:
+        case 0x40:
         case 0x3C:
         case 0x70:
         case 0x7C:
@@ -88,9 +94,11 @@ static void aspeed_scu_write(void *opaque, hwaddr offset, uint64_t data,
 
     switch (offset) {
         case 0x00:
+        case 0x04:
         case 0x0C:
         case 0x2C:
         case 0x3C:
+        case 0x40:
         case 0x70:
         case 0x80 ... 0x9C:
             break;
@@ -123,11 +131,17 @@ static void aspeed_scu_reset(DeviceState *dev)
     AspeedSCUState *s = ASPEED_SCU(dev);
 
     s->regs[SCU00] = 0;
+    s->regs[SCU04] = 0xFFCFFECCU;
     s->regs[SCU08] = s->scu08_rst;
     s->regs[SCU0C] = s->scu0c_rst;
     s->regs[SCU24] = s->scu24_rst;
     s->regs[SCU2C] = 0x00000010U;
     s->regs[SCU3C] = 0x00000001U;
+    /*
+     * The U-boot platform initialization code sets scratch bit 6 to skip
+     * calibration.
+     */
+    s->regs[SCU40] = 0xFFFFFF40U;
     s->regs[SCU70] = s->scu70_rst;
     s->regs[SCU7C] = 0x02000303U;
     s->regs[SCU80] = 0;

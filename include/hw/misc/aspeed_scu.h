@@ -28,6 +28,7 @@ typedef struct AspeedSCUState {
     uint32_t regs[ASPEED_SCU_NR_REGS];
 
     /* Reset properties */
+    uint32_t scu04_rst;
     uint32_t scu08_rst;
     uint32_t scu0c_rst;
     uint32_t scu24_rst;
