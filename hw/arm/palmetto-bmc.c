@@ -27,6 +27,7 @@ static struct arm_boot_info palmetto_bmc_binfo = {
 typedef struct PalmettoBMCState {
     AST2400State soc;
     MemoryRegion ram;
+    MemoryRegion ram_alias;
 } PalmettoBMCState;
 
 static void palmetto_bmc_init(MachineState *machine)
@@ -41,6 +42,9 @@ static void palmetto_bmc_init(MachineState *machine)
     memory_region_allocate_system_memory(&bmc->ram, NULL, "ram", ram_size);
     memory_region_add_subregion(get_system_memory(), AST2400_SDRAM_BASE,
                                 &bmc->ram);
+    memory_region_init_alias(&bmc->ram_alias, NULL, "alias.ram", &bmc->ram, 0, ram_size);
+    memory_region_add_subregion(get_system_memory(), 0, &bmc->ram_alias);
+
     object_property_add_const_link(OBJECT(&bmc->soc), "ram", OBJECT(&bmc->ram),
                                    &error_abort);
     object_property_set_bool(OBJECT(&bmc->soc), true, "realized",
