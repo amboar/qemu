@@ -33,6 +33,7 @@ typedef struct AspeedSCUState {
 
 #define AST2400_A0_SILICON_REV   0x02000303U
 #define AST2500_A0_SILICON_REV   0x04000303U
+#define AST2500_A1_SILICON_REV   0x04010303U
 
 extern bool is_supported_silicon_rev(uint32_t silicon_rev);
 

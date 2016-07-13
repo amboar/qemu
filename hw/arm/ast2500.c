@@ -72,6 +72,12 @@ static void ast2500_init(Object *obj)
     object_initialize(&s->scu, sizeof(s->scu), TYPE_ASPEED_SCU);
     object_property_add_child(obj, "scu", OBJECT(&s->scu), NULL);
     qdev_set_parent_bus(DEVICE(&s->scu), sysbus_get_default());
+    qdev_prop_set_uint32(DEVICE(&s->scu), "silicon-rev",
+                         AST2500_A1_SILICON_REV);
+    object_property_add_alias(obj, "hw-strap1", OBJECT(&s->scu),
+                              "hw-strap1", &error_abort);
+    object_property_add_alias(obj, "hw-strap2", OBJECT(&s->scu),
+                              "hw-strap2", &error_abort);
 }
 
 static void ast2500_realize(DeviceState *dev, Error **errp)
