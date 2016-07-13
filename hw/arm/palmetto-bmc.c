@@ -22,6 +22,19 @@
 #include "sysemu/blockdev.h"
 #include "hw/block/flash.h"
 
+#define PALMETTO_BMC_HW_STRAP1 (                                        \
+        SCU_HW_STRAP_DRAM_SIZE(DRAM_SIZE_256MB) |                       \
+        SCU_HW_STRAP_DRAM_CONFIG(2 /* DDR3 with CL=6, CWL=5 */) |       \
+        SCU_HW_STRAP_ACPI_DIS |                                         \
+        SCU_HW_STRAP_SET_CLK_SOURCE(CLK_48M_IN) |                       \
+        SCU_HW_STRAP_VGA_CLASS_CODE |                                   \
+        SCU_HW_STRAP_LPC_RESET_PIN |                                    \
+        SCU_HW_STRAP_SPI_MODE(SCU_HW_STRAP_SPI_M_S_EN) |                \
+        SCU_HW_STRAP_SET_CPU_AHB_RATIO(CPU_AHB_RATIO_2_1) |             \
+        SCU_HW_STRAP_SPI_WIDTH |                                        \
+        SCU_HW_STRAP_VGA_SIZE_SET(VGA_16M_DRAM) |                       \
+        SCU_HW_STRAP_BOOT_MODE(SPI_BOOT))
+
 static struct arm_boot_info palmetto_bmc_binfo = {
     .loader_start = AST2400_SDRAM_BASE,
     .board_id = 0,
@@ -77,7 +90,8 @@ static void palmetto_bmc_init(MachineState *machine)
                                 &bmc->ram);
     object_property_add_const_link(OBJECT(&bmc->soc), "ram", OBJECT(&bmc->ram),
                                    &error_abort);
-    object_property_set_int(OBJECT(&bmc->soc), 0x120CE416, "hw-strap1",
+    object_property_set_int(OBJECT(&bmc->soc), PALMETTO_BMC_HW_STRAP1,
+                            "hw-strap1",
                             &error_abort);
     object_property_set_bool(OBJECT(&bmc->soc), true, "realized",
                              &error_abort);
