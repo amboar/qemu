@@ -33,6 +33,8 @@ typedef struct PalmettoBMCState {
     MemoryRegion ram;
 } PalmettoBMCState;
 
+static bool palmetto_bmc_has_flash0;
+
 static void palmetto_bmc_init_flashes(AspeedSMCState *s, const char *flashtype,
                                       Error **errp)
 {
@@ -51,6 +53,7 @@ static void palmetto_bmc_init_flashes(AspeedSMCState *s, const char *flashtype,
         if (dinfo) {
             qdev_prop_set_drive(fl->flash, "drive", blk_by_legacy_dinfo(dinfo),
                                 errp);
+            palmetto_bmc_has_flash0 = true;
         }
         m25p80_set_rom_storage(fl->flash, &fl->mmio);
         qdev_init_nofail(fl->flash);
@@ -81,6 +84,19 @@ static void palmetto_bmc_init(MachineState *machine)
 
     palmetto_bmc_init_flashes(&bmc->soc.smc, "n25q256a", &error_abort);
     palmetto_bmc_init_flashes(&bmc->soc.spi, "mx25l25635f", &error_abort);
+
+    /*
+     * Install first SMC/FMC flash content as a rom.
+     */
+    if (palmetto_bmc_has_flash0) {
+        AspeedSMCFlash *flash0 = &bmc->soc.smc.flashes[0];
+        MemoryRegion *flash0alias = g_new(MemoryRegion, 1);
+
+        memory_region_init_alias(flash0alias, OBJECT(&bmc->soc.smc),
+                                 "flash0alias", &flash0->mmio, 0,
+                                 flash0->size);
+        memory_region_add_subregion(get_system_memory(), 0, flash0alias);
+    }
 
     palmetto_bmc_binfo.kernel_filename = machine->kernel_filename;
     palmetto_bmc_binfo.initrd_filename = machine->initrd_filename;
