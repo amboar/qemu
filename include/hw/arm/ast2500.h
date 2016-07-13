@@ -20,6 +20,7 @@
 #include "hw/ssi/aspeed_smc.h"
 #include "hw/misc/aspeed_sdmc.h"
 #include "hw/net/ftgmac100.h"
+#include "hw/watchdog/wdt_aspeed.h"
 
 typedef struct AST2500State {
     /*< private >*/
@@ -36,6 +37,7 @@ typedef struct AST2500State {
     AspeedSMCState spi;
     AspeedSDMCState sdmc;
     Ftgmac100State ftgmac100;
+    AspeedWDTState wdt;
 } AST2500State;
 
 #define TYPE_AST2500 "ast2500"
