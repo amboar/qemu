@@ -30,6 +30,8 @@
 #define AST2500_SCU_BASE         0x1E6E2000
 #define AST2500_TIMER_BASE       0x1E782000
 #define AST2500_I2C_BASE         0x1E78A000
+#define AST2500_ETH1_BASE        0x1E660000
+#define AST2500_ETH2_BASE        0x1E680000
 
 #define AST2500_FMC_FLASH_BASE   0x20000000
 #define AST2500_SPI_FLASH_BASE   0x30000000
@@ -103,6 +105,10 @@ static void ast2500_init(Object *obj)
     qdev_set_parent_bus(DEVICE(&s->sdmc), sysbus_get_default());
     qdev_prop_set_uint32(DEVICE(&s->sdmc), "silicon-rev",
                          AST2500_A1_SILICON_REV);
+
+    object_initialize(&s->ftgmac100, sizeof(s->ftgmac100), TYPE_FTGMAC100);
+    object_property_add_child(obj, "ftgmac100", OBJECT(&s->ftgmac100), NULL);
+    qdev_set_parent_bus(DEVICE(&s->ftgmac100), sysbus_get_default());
 }
 
 static void ast2500_realize(DeviceState *dev, Error **errp)
@@ -208,6 +214,17 @@ static void ast2500_realize(DeviceState *dev, Error **errp)
         return;
     }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->sdmc), 0, AST2500_SDMC_BASE);
+
+    /* Net */
+    qdev_set_nic_properties(DEVICE(&s->ftgmac100), &nd_table[0]);
+    object_property_set_bool(OBJECT(&s->ftgmac100), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->ftgmac100), 0, AST2500_ETH1_BASE);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->ftgmac100), 0,
+                       qdev_get_gpio_in(DEVICE(&s->vic), 2));
 }
 
 static void ast2500_class_init(ObjectClass *oc, void *data)
