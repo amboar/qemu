@@ -47,6 +47,7 @@ typedef struct AspeedSMCController {
 
 typedef struct AspeedSMCFlash {
     const struct AspeedSMCState *controller;
+    uint8_t *storage;
 
     uint8_t id;
     uint32_t size;

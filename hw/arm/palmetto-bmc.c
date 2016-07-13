@@ -20,6 +20,7 @@
 #include "qemu/log.h"
 #include "sysemu/block-backend.h"
 #include "sysemu/blockdev.h"
+#include "hw/block/flash.h"
 
 static struct arm_boot_info palmetto_bmc_binfo = {
     .loader_start = AST2400_SDRAM_BASE,
@@ -51,6 +52,7 @@ static void palmetto_bmc_init_flashes(AspeedSMCState *s, const char *flashtype,
             qdev_prop_set_drive(fl->flash, "drive", blk_by_legacy_dinfo(dinfo),
                                 errp);
         }
+        m25p80_set_rom_storage(fl->flash, &fl->mmio);
         qdev_init_nofail(fl->flash);
 
         cs_line = qdev_get_gpio_in_named(fl->flash, SSI_GPIO_CS, 0);

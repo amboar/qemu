@@ -23,11 +23,13 @@
  */
 
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "hw/sysbus.h"
 #include "sysemu/sysemu.h"
 #include "qemu/log.h"
 #include "include/qemu/error-report.h"
 #include "exec/address-spaces.h"
+#include "hw/block/flash.h"
 
 #include "hw/ssi/aspeed_smc.h"
 
@@ -198,6 +200,37 @@ static inline bool aspeed_smc_is_writable(const AspeedSMCState *s, int cs)
     return s->regs[s->r_conf] & (1 << (s->conf_enable_w0 + cs));
 }
 
+/*
+ * Sanity checks on the command mode and the SPI flash command being
+ * used
+ */
+static inline bool aspeed_smc_check_mode(const AspeedSMCState *s, int cs)
+{
+    uint8_t mode = aspeed_smc_flash_mode(s, cs);
+    uint8_t cmd = (s->regs[s->r_ctrl0 + cs] >> CTRL_CMD_SHIFT) && CTRL_CMD_MASK;
+    bool ret;
+
+    switch (mode) {
+    case CTRL_READMODE:
+        ret = (cmd == 0x3 || cmd == 0x0);
+        break;
+    case CTRL_FREADMODE:
+        ret = true;
+        break;
+    case CTRL_WRITEMODE:
+    default:
+        ret = false;
+        break;
+    }
+
+    if (!ret) {
+        qemu_log_mask(LOG_GUEST_ERROR, "%s: invalid mode/command: %d/%d\n",
+                      __func__, cmd, mode);
+    }
+
+    return ret;
+}
+
 static uint64_t aspeed_smc_flash_read(void *opaque, hwaddr addr, unsigned size)
 {
     AspeedSMCFlash *fl = opaque;
@@ -210,9 +243,11 @@ static uint64_t aspeed_smc_flash_read(void *opaque, hwaddr addr, unsigned size)
             ret |= ssi_transfer(s->spi, 0x0) << (8 * i);
         }
     } else {
-        qemu_log_mask(LOG_UNIMP, "%s: usermode not implemented\n",
-                      __func__);
-        ret = -1;
+        if (aspeed_smc_check_mode(s, fl->id)) {
+            for (i = 0; i < size; i++) {
+                ret = fl->storage[addr + i] << (8 * i);
+            }
+        }
     }
 
     return ret;
@@ -330,7 +365,14 @@ static void aspeed_smc_write(void *opaque, hwaddr addr, uint64_t data,
         addr == s->r_ce_ctrl) {
         s->regs[addr] = value;
     } else if (addr >= s->r_ctrl0 && addr < s->r_ctrl0 + s->num_cs) {
+        int i;
+
         s->regs[addr] = value;
+
+        for (i = 0; i < s->num_cs; ++i) {
+            memory_region_rom_device_set_romd(&s->flashes[i].mmio,
+                                              !aspeed_smc_is_usermode(s, i));
+        }
         aspeed_smc_update_cs(s);
     } else {
         qemu_log_mask(LOG_UNIMP, "%s: not implemented: 0x%" HWADDR_PRIx "\n",
@@ -354,6 +396,7 @@ static void aspeed_smc_realize(DeviceState *dev, Error **errp)
     int i;
     char name[32];
     hwaddr offset = 0;
+    Error *err = NULL;
 
     s->ctrl = mc->ctrl;
 
@@ -408,8 +451,16 @@ static void aspeed_smc_realize(DeviceState *dev, Error **errp)
         fl->id = i;
         fl->controller = s;
         fl->size = s->ctrl->segments[i].size;
-        memory_region_init_io(&fl->mmio, OBJECT(s), &aspeed_smc_flash_ops,
-                              fl, name, fl->size);
+        memory_region_init_rom_device(&fl->mmio, OBJECT(s),
+                                      &aspeed_smc_flash_ops,
+                                      fl, name, fl->size, &err);
+        if (err) {
+            error_propagate(errp, err);
+            return;
+        }
+        vmstate_register_ram(&fl->mmio, DEVICE(s));
+        fl->storage = memory_region_get_ram_ptr(&fl->mmio);
+
         memory_region_add_subregion(&s->mmio_flash, offset, &fl->mmio);
         offset += fl->size;
     }
