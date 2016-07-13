@@ -29,6 +29,7 @@
 #include "qemu/bitops.h"
 #include "qemu/log.h"
 #include "qapi/error.h"
+#include "hw/block/flash.h"
 
 #ifndef M25P80_ERR_DEBUG
 #define M25P80_ERR_DEBUG 0
@@ -1153,7 +1154,11 @@ static void m25p80_realize(SSISlave *ss, Error **errp)
 
     if (s->blk) {
         DB_PRINT_L(0, "Binding to IF_MTD drive\n");
-        s->storage = blk_blockalign(s->blk, s->size);
+
+        /* using an external storage. see m25p80_create_rom() */
+        if (!s->storage) {
+            s->storage = blk_blockalign(s->blk, s->size);
+        }
 
         if (blk_pread(s->blk, 0, s->storage, s->size) != s->size) {
             error_setg(errp, "failed to read the initial flash content");
@@ -1260,3 +1265,10 @@ static void m25p80_register_types(void)
 }
 
 type_init(m25p80_register_types)
+
+void m25p80_set_rom_storage(DeviceState *dev, MemoryRegion *rom)
+{
+    Flash *s = M25P80(dev);
+
+    s->storage = memory_region_get_ram_ptr(rom);
+}
