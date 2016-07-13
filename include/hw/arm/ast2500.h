@@ -16,6 +16,7 @@
 #include "hw/intc/aspeed_vic.h"
 #include "hw/misc/aspeed_scu.h"
 #include "hw/timer/aspeed_timer.h"
+#include "hw/i2c/aspeed_i2c.h"
 
 typedef struct AST2500State {
     /*< private >*/
@@ -27,6 +28,7 @@ typedef struct AST2500State {
     AspeedVICState vic;
     AspeedTimerCtrlState timerctrl;
     AspeedSCUState scu;
+    AspeedI2CState i2c;
 } AST2500State;
 
 #define TYPE_AST2500 "ast2500"

@@ -26,6 +26,7 @@
 #define AST2500_VIC_BASE         0x1E6C0000
 #define AST2500_SCU_BASE         0x1E6E2000
 #define AST2500_TIMER_BASE       0x1E782000
+#define AST2500_I2C_BASE         0x1E78A000
 
 static const int uart_irqs[] = { 9, 32, 33, 34, 10 };
 static const int timer_irqs[] = { 16, 17, 18, 35, 36, 37, 38, 39, };
@@ -78,6 +79,10 @@ static void ast2500_init(Object *obj)
                               "hw-strap1", &error_abort);
     object_property_add_alias(obj, "hw-strap2", OBJECT(&s->scu),
                               "hw-strap2", &error_abort);
+
+    object_initialize(&s->i2c, sizeof(s->i2c), TYPE_ASPEED_I2C);
+    object_property_add_child(obj, "i2c", OBJECT(&s->i2c), NULL);
+    qdev_set_parent_bus(DEVICE(&s->i2c), sysbus_get_default());
 }
 
 static void ast2500_realize(DeviceState *dev, Error **errp)
@@ -130,6 +135,27 @@ static void ast2500_realize(DeviceState *dev, Error **errp)
         serial_mm_init(&s->iomem, AST2500_UART_5_BASE, 2,
                        uart5, 38400, serial_hds[0], DEVICE_LITTLE_ENDIAN);
     }
+
+   /* I2C */
+    object_property_set_bool(OBJECT(&s->i2c), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c), 0, AST2500_I2C_BASE);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c), 0,
+                       qdev_get_gpio_in(DEVICE(&s->vic), 12));
+
+    /* add a TMP423 temperature sensor */
+    dev = i2c_create_slave(aspeed_i2c_get_bus(DEVICE(&s->i2c), 2),
+                           "tmp423", 0x4c);
+    object_property_set_int(OBJECT(dev), 31000, "temperature0", &err);
+    object_property_set_int(OBJECT(dev), 28000, "temperature1", &err);
+    object_property_set_int(OBJECT(dev), 20000, "temperature2", &err);
+    object_property_set_int(OBJECT(dev), 110000, "temperature3", &err);
+
+    /* A basic RTC without alarms */
+    i2c_create_slave(aspeed_i2c_get_bus(DEVICE(&s->i2c), 0), "ds1338", 0x68);
 }
 
 static void ast2500_class_init(ObjectClass *oc, void *data)
