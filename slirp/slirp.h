@@ -292,6 +292,9 @@ int tcp_emu(struct socket *, struct mbuf *);
 int tcp_ctl(struct socket *);
 struct tcpcb *tcp_drop(struct tcpcb *tp, int err);
 
+/* ncsi.c */
+void ncsi_input(Slirp *slirp, const uint8_t *pkt, int pkt_len);
+
 #ifndef _WIN32
 #define min(x,y) ((x) < (y) ? (x) : (y))
 #define max(x,y) ((x) > (y) ? (x) : (y))
