@@ -217,7 +217,10 @@ static void ast2500_realize(DeviceState *dev, Error **errp)
 
     /* Net */
     qdev_set_nic_properties(DEVICE(&s->ftgmac100), &nd_table[0]);
-    object_property_set_bool(OBJECT(&s->ftgmac100), true, "realized", &err);
+    object_property_set_bool(OBJECT(&s->ftgmac100), true, "aspeed", &err);
+    object_property_set_bool(OBJECT(&s->ftgmac100), true, "realized",
+                             &local_err);
+    error_propagate(&err, local_err);
     if (err) {
         error_propagate(errp, err);
         return;
