@@ -366,11 +366,20 @@ static void do_phy_write(Ftgmac100State *s, int reg, uint32_t val)
 static void ftgmac100_read_bd(Ftgmac100Desc *bd, dma_addr_t addr)
 {
     dma_memory_read(&address_space_memory, addr, bd, sizeof(*bd));
+    bd->des0 = le32_to_cpu(bd->des0);
+    bd->des1 = le32_to_cpu(bd->des1);
+    bd->des2 = le32_to_cpu(bd->des2);
+    bd->des3 = le32_to_cpu(bd->des3);
 }
 
 static void ftgmac100_write_bd(Ftgmac100Desc *bd, dma_addr_t addr)
 {
-    dma_memory_write(&address_space_memory, addr, bd, sizeof(*bd));
+    Ftgmac100Desc lebd;
+    lebd.des0 = cpu_to_le32(bd->des0);
+    lebd.des1 = cpu_to_le32(bd->des1);
+    lebd.des2 = cpu_to_le32(bd->des2);
+    lebd.des3 = cpu_to_le32(bd->des3);
+    dma_memory_write(&address_space_memory, addr, &lebd, sizeof(lebd));
 }
 
 static void ftgmac100_update_irq(Ftgmac100State *s)
