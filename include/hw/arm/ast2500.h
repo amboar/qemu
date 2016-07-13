@@ -14,6 +14,7 @@
 
 #include "hw/arm/arm.h"
 #include "hw/intc/aspeed_vic.h"
+#include "hw/misc/aspeed_scu.h"
 #include "hw/timer/aspeed_timer.h"
 
 typedef struct AST2500State {
@@ -25,6 +26,7 @@ typedef struct AST2500State {
     MemoryRegion iomem;
     AspeedVICState vic;
     AspeedTimerCtrlState timerctrl;
+    AspeedSCUState scu;
 } AST2500State;
 
 #define TYPE_AST2500 "ast2500"
