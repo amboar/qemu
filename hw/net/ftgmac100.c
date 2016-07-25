@@ -823,7 +823,7 @@ static void ftgmac100_cleanup(NetClientState *nc)
 }
 
 static NetClientInfo net_ftgmac100_info = {
-    .type = NET_CLIENT_OPTIONS_KIND_NIC,
+    .type = NET_CLIENT_DRIVER_NIC,
     .size = sizeof(NICState),
     .can_receive = ftgmac100_can_receive,
     .receive = ftgmac100_receive,
