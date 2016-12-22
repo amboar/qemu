@@ -53,3 +53,7 @@ milkymist_pfpu_pulse_irq(void) "Pulse IRQ"
 
 # hw/misc/aspeed_scu.c
 aspeed_scu_write(uint64_t offset, unsigned size, uint32_t data) "To 0x%" PRIx64 " of size %u: 0x%" PRIx32
+
+# hw/misc/aspeed_lpc.c
+aspeed_lpc_read(uint64_t offset, unsigned size, uint32_t data) "From 0x%" PRIx64 " of size %u: 0x%" PRIx32
+aspeed_lpc_write(uint64_t offset, unsigned size, uint32_t data) "To 0x%" PRIx64 " of size %u: 0x%" PRIx32

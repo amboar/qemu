@@ -21,6 +21,7 @@
 #include "hw/ssi/aspeed_smc.h"
 #include "hw/watchdog/wdt_aspeed.h"
 #include "hw/net/ftgmac100.h"
+#include "hw/misc/aspeed_lpc.h"
 
 #define ASPEED_SPIS_NUM  2
 
@@ -41,6 +42,7 @@ typedef struct AspeedSoCState {
     AspeedSDMCState sdmc;
     AspeedWDTState wdt;
     Ftgmac100State ftgmac100;
+    AspeedLPCState lpc;
 } AspeedSoCState;
 
 #define TYPE_ASPEED_SOC "aspeed-soc"

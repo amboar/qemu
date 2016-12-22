@@ -20,6 +20,7 @@
 #include "qemu/log.h"
 #include "hw/i2c/aspeed_i2c.h"
 #include "net/net.h"
+#include "hw/misc/aspeed_lpc.h"
 
 #define ASPEED_SOC_UART_5_BASE      0x00184000
 #define ASPEED_SOC_IOMEM_SIZE       0x00200000
@@ -36,6 +37,7 @@
 #define ASPEED_SOC_I2C_BASE         0x1E78A000
 #define ASPEED_SOC_ETH1_BASE        0x1E660000
 #define ASPEED_SOC_ETH2_BASE        0x1E680000
+#define ASPEED_SOC_LPC_BASE         0x1E789000
 
 static const int uart_irqs[] = { 9, 32, 33, 34, 10 };
 static const int timer_irqs[] = { 16, 17, 18, 35, 36, 37, 38, 39, };
@@ -184,6 +186,10 @@ static void aspeed_soc_init(Object *obj)
     object_initialize(&s->ftgmac100, sizeof(s->ftgmac100), TYPE_FTGMAC100);
     object_property_add_child(obj, "ftgmac100", OBJECT(&s->ftgmac100), NULL);
     qdev_set_parent_bus(DEVICE(&s->ftgmac100), sysbus_get_default());
+
+    object_initialize(&s->lpc, sizeof(s->lpc), TYPE_ASPEED_LPC);
+    object_property_add_child(obj, "lpc", OBJECT(&s->lpc), NULL);
+    qdev_set_parent_bus(DEVICE(&s->lpc), sysbus_get_default());
 }
 
 static void aspeed_soc_realize(DeviceState *dev, Error **errp)
@@ -337,6 +343,14 @@ static void aspeed_soc_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ftgmac100), 0, ASPEED_SOC_ETH1_BASE);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->ftgmac100), 0,
                        qdev_get_gpio_in(DEVICE(&s->vic), 2));
+
+    /* LPC */
+    object_property_set_bool(OBJECT(&s->lpc), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->lpc), 0, ASPEED_SOC_LPC_BASE);
 }
 
 static void aspeed_soc_class_init(ObjectClass *oc, void *data)
