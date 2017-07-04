@@ -109,6 +109,7 @@ static const AspeedBoardConfig aspeed_boards[] = {
         .fmc_model = "n25q256a",
         .spi_model = "mx66l1g45g",
         .num_cs    = 2,
+        .i2c_init  = ast2500_evb_i2c_init,
     },
 };
 
@@ -284,6 +285,7 @@ static void ast2500_evb_i2c_init(AspeedBoardState *bmc)
 
     /* The AST2500 EVB expects a LM75 but a TMP105 is compatible */
     i2c_create_slave(aspeed_i2c_get_bus(DEVICE(&soc->i2c), 7), "tmp105", 0x4d);
+    i2c_create_slave(aspeed_i2c_get_bus(DEVICE(&soc->i2c), 3), "pmbus-device", 0x52);
 }
 
 static void ast2500_evb_init(MachineState *machine)
