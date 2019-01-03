@@ -620,7 +620,7 @@ static void ftgmac100_reset(DeviceState *d)
     s->itc = 0;
     s->aptcr = 1;
     s->dblac = 0x00022f00;
-    s->revr = 0;
+    s->revr = FTGMAC100_REVR_NEW_MDIO_INTERFACE;
     s->fear1 = 0;
     s->tpafcr = 0xf1;
 
