@@ -947,9 +947,24 @@ static void aspeed_smc_write(void *opaque, hwaddr addr, uint64_t data,
         addr == s->r_ce_ctrl) {
         s->regs[addr] = value;
     } else if (addr >= s->r_ctrl0 && addr < s->r_ctrl0 + s->num_cs) {
-        int cs = addr - s->r_ctrl0;
+        bool in_user;
+        int cs;
+
+        cs = addr - s->r_ctrl0;
+        in_user = aspeed_smc_flash_mode(&s->flashes[cs]) == CTRL_USERMODE;
+
+        if (in_user && s->regs[addr] != value) {
+            aspeed_smc_flash_unselect(&s->flashes[cs]);
+        }
+
         s->regs[addr] = value;
         aspeed_smc_flash_update_cs(&s->flashes[cs]);
+
+        in_user = aspeed_smc_flash_mode(&s->flashes[cs]) == CTRL_USERMODE;
+        if (in_user) {
+            if (aspeed_smc_is_ce_stop_active(&s->flashes[cs]))
+                aspeed_smc_flash_select(&s->flashes[cs]);
+        }
     } else if (addr >= R_SEG_ADDR0 &&
                addr < R_SEG_ADDR0 + s->ctrl->max_slaves) {
         int cs = addr - R_SEG_ADDR0;
