@@ -443,6 +443,15 @@ static const AspeedBoardConfig aspeed_boards[] = {
         .spi_model = "mx66l1g45g",
         .num_cs    = 2,
         .i2c_init  = witherspoon_bmc_i2c_init,
+    }, {
+        .name      = MACHINE_TYPE_NAME("x11dpg-qt-bmc"),
+        .desc      = "Supermicro X11DPG-QT BMC (ARM1176)",
+        .soc_name  = "ast2500-a1",
+        .hw_strap1 = AST2500_EVB_HW_STRAP1,
+        .fmc_model = "mx25l25635e",
+        .spi_model = "mx66l1g45g",
+        .num_cs    = 1,
+        .i2c_init  = ast2500_evb_i2c_init,
     },
 };
 
