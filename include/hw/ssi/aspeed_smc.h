@@ -48,10 +48,16 @@ typedef struct AspeedSMCController {
     uint32_t nregs;
 } AspeedSMCController;
 
+enum smc_workaround { user_cmd_disabled, user_cmd_armed, user_cmd_address };
+
 typedef struct AspeedSMCFlash {
     struct AspeedSMCState *controller;
 
     uint8_t id;
+    enum smc_workaround workaround;
+    uint8_t cmd;
+    uint8_t addr[4];
+    uint8_t *cursor;
     uint32_t size;
 
     MemoryRegion mmio;

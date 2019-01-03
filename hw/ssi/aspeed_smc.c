@@ -605,6 +605,25 @@ static void aspeed_smc_flash_write(void *opaque, hwaddr addr, uint64_t data,
         for (i = 0; i < size; i++) {
             ssi_transfer(s->spi, (data >> (8 * i)) & 0xff);
         }
+        if (fl->workaround == user_cmd_armed) {
+            assert(size == 1);
+            fl->cmd = data & 0xff;
+            fl->cursor = &fl->addr[0];
+            fl->workaround = user_cmd_address;
+        } else if (fl->workaround == user_cmd_address) {
+            size_t delta;
+
+            *fl->cursor++ = data & 0xff;
+            delta = (aspeed_smc_flash_is_4byte(fl) ? 4 : 3) + 1;
+            if ((fl->cursor - &fl->addr[0]) == delta) {
+                /* Issue some more dummies */
+                if (fl->cmd == 0x0b || fl->cmd == 0x0c) {
+                    for (i = 0; i < 7; i++)
+                        ssi_transfer(fl->controller->spi, s->regs[R_DUMMY_DATA] & 0xff);
+                }
+                fl->workaround = user_cmd_disabled;
+            }
+        }
         break;
     case CTRL_WRITEMODE:
         aspeed_smc_flash_select(fl);
@@ -955,6 +974,7 @@ static void aspeed_smc_write(void *opaque, hwaddr addr, uint64_t data,
 
         if (in_user && s->regs[addr] != value) {
             aspeed_smc_flash_unselect(&s->flashes[cs]);
+            s->flashes[cs].workaround = user_cmd_disabled;
         }
 
         s->regs[addr] = value;
@@ -964,6 +984,7 @@ static void aspeed_smc_write(void *opaque, hwaddr addr, uint64_t data,
         if (in_user) {
             if (aspeed_smc_is_ce_stop_active(&s->flashes[cs]))
                 aspeed_smc_flash_select(&s->flashes[cs]);
+            s->flashes[cs].workaround = user_cmd_armed;
         }
     } else if (addr >= R_SEG_ADDR0 &&
                addr < R_SEG_ADDR0 + s->ctrl->max_slaves) {
