@@ -269,6 +269,9 @@ static void aspeed_wdt_realize(DeviceState *dev, Error **errp)
     case AST2500_A1_SILICON_REV:
         s->ext_pulse_width_mask = 0xfffff;
         break;
+    case AST2600_A0_SILICON_REV: /* TODO */
+        s->ext_pulse_width_mask = 0xfffff;
+        break;
     default:
         g_assert_not_reached();
     }

@@ -31,7 +31,7 @@
 #include "hw/misc/aspeed_lpc.h"
 
 #define ASPEED_SPIS_NUM  2
-#define ASPEED_WDTS_NUM  3
+#define ASPEED_WDTS_NUM  4
 #define ASPEED_CPUS_NUM  2
 #define ASPEED_MACS_NUM  2
 
@@ -124,7 +124,10 @@ enum {
     ASPEED_ETH2,
     ASPEED_ETH3,
     ASPEED_ETH4,
-    ASPEED_MII,
+    ASPEED_MII1,
+    ASPEED_MII2,
+    ASPEED_MII3,
+    ASPEED_MII4,
     ASPEED_SDRAM,
     ASPEED_XDMA,
 };
