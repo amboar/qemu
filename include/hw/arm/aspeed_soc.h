@@ -12,6 +12,7 @@
 #ifndef ASPEED_SOC_H
 #define ASPEED_SOC_H
 
+#include "hw/cpu/a15mpcore.h"
 #include "hw/intc/aspeed_vic.h"
 #include "hw/misc/aspeed_scu.h"
 #include "hw/adc/aspeed_adc.h"
@@ -41,6 +42,7 @@ typedef struct AspeedSoCState {
     /*< public >*/
     ARMCPU cpu[ASPEED_CPUS_NUM];
     uint32_t num_cpus;
+    A15MPPrivState     a7mpcore;
     MemoryRegion sram;
     AspeedVICState vic;
     AspeedRtcState rtc;
@@ -120,6 +122,9 @@ enum {
     ASPEED_I2C,
     ASPEED_ETH1,
     ASPEED_ETH2,
+    ASPEED_ETH3,
+    ASPEED_ETH4,
+    ASPEED_MII,
     ASPEED_SDRAM,
     ASPEED_XDMA,
 };

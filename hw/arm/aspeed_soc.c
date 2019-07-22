@@ -80,6 +80,40 @@ static const hwaddr aspeed_soc_ast2500_memmap[] = {
     [ASPEED_SDRAM]  = 0x80000000,
 };
 
+static const hwaddr aspeed_soc_ast2600_memmap[] = {
+    [ASPEED_SRAM]   = 0x10000000,
+    /* 0x16000000     0x17FFFFFF : AHB BUS do LPC Bus bridge */
+    [ASPEED_IOMEM]  = 0x1E600000,
+    [ASPEED_PWM]    = 0x1E610000,
+    [ASPEED_FMC]    = 0x1E620000,
+    [ASPEED_SPI1]   = 0x1E630000,
+    [ASPEED_SPI2]   = 0x1E641000,
+    [ASPEED_MII]    = 0x1E650000,
+    [ASPEED_ETH1]   = 0x1E660000,
+    [ASPEED_ETH3]   = 0x1E670000,
+    [ASPEED_ETH2]   = 0x1E660000,
+    [ASPEED_ETH4]   = 0x1E690000,
+    [ASPEED_VIC]    = 0x1E6C0000,
+    [ASPEED_SDMC]   = 0x1E6E0000,
+    [ASPEED_SCU]    = 0x1E6E2000,
+    [ASPEED_XDMA]   = 0x1E6E7000,
+    [ASPEED_ADC]    = 0x1E6E9000,
+    [ASPEED_SDHCI]  = 0x1E740000,
+    [ASPEED_GPIO]   = 0x1E780000,
+    [ASPEED_RTC]    = 0x1E781000,
+    [ASPEED_TIMER1] = 0x1E782000,
+    [ASPEED_WDT]    = 0x1E785000,
+    [ASPEED_LPC]    = 0x1E789000,
+    [ASPEED_IBT]    = 0x1E789140,
+    [ASPEED_I2C]    = 0x1E78A000,
+    [ASPEED_UART1]  = 0x1E783000,
+    [ASPEED_UART5]  = 0x1E784000,
+    [ASPEED_VUART]  = 0x1E787000,
+    [ASPEED_SDRAM]  = 0x80000000,
+};
+
+#define ASPEED_A7MPCORE_ADDR 0x40460000
+
 static const int aspeed_soc_ast2400_irqmap[] = {
     [ASPEED_UART1]  = 9,
     [ASPEED_UART2]  = 32,
@@ -114,6 +148,39 @@ static const int aspeed_soc_ast2400_irqmap[] = {
 
 #define aspeed_soc_ast2500_irqmap aspeed_soc_ast2400_irqmap
 
+#define ASPEED_SOC_AST2600_MAX_IRQ 128
+
+static const int aspeed_soc_ast2600_irqmap[] = {
+    [ASPEED_UART1]  = 47,
+    [ASPEED_UART2]  = 48,
+    [ASPEED_UART3]  = 49,
+    [ASPEED_UART4]  = 50,
+    [ASPEED_UART5]  = 8,
+    [ASPEED_VUART]  = 8,
+    [ASPEED_FMC]    = 39,
+    [ASPEED_SDMC]   = 0,
+    [ASPEED_SCU]    = 12,
+    [ASPEED_XDMA]   = 6,
+    [ASPEED_ADC]    = 46,
+    [ASPEED_GPIO]   = 40,
+    [ASPEED_RTC]    = 13,
+    [ASPEED_TIMER1] = 16,
+    [ASPEED_TIMER2] = 17,
+    [ASPEED_TIMER3] = 18,
+    [ASPEED_TIMER4] = 19,
+    [ASPEED_TIMER5] = 20,
+    [ASPEED_TIMER6] = 21,
+    [ASPEED_TIMER7] = 22,
+    [ASPEED_TIMER8] = 23,
+    [ASPEED_WDT]    = 24,
+    [ASPEED_PWM]    = 44,
+    [ASPEED_LPC]    = 35,
+    [ASPEED_IBT]    = 35, /* LPC */
+    [ASPEED_I2C]    = 110, /* 110 -> 125 */
+    [ASPEED_ETH1]   = 2,
+    [ASPEED_ETH2]   = 3,
+};
+
 static const AspeedSoCInfo aspeed_socs[] = {
     {
         .name         = "ast2400-a1",
@@ -135,14 +202,26 @@ static const AspeedSoCInfo aspeed_socs[] = {
         .irqmap       = aspeed_soc_ast2500_irqmap,
         .memmap       = aspeed_soc_ast2500_memmap,
         .num_cpus     = 1,
+    }, {
+        .name         = "ast2600-a0",
+        .cpu_type     = ARM_CPU_TYPE_NAME("cortex-a7"), /* could be arm1176 ? */
+        .silicon_rev  = AST2600_A0_SILICON_REV,
+        .sram_size    = 0x10000,
+        .spis_num     = 2,
+        .wdts_num     = 3,
+        .irqmap       = aspeed_soc_ast2600_irqmap,
+        .memmap       = aspeed_soc_ast2600_memmap,
+        .num_cpus     = 2,
     },
 };
 
 static qemu_irq aspeed_soc_get_irq(AspeedSoCState *s, int ctrl)
 {
     AspeedSoCClass *sc = ASPEED_SOC_GET_CLASS(s);
+    DeviceState *intc = ASPEED_IS_AST2600(sc->info->silicon_rev) ?
+        DEVICE(&s->a7mpcore) : DEVICE(&s->vic);
 
-    return qdev_get_gpio_in(DEVICE(&s->vic), sc->info->irqmap[ctrl]);
+    return qdev_get_gpio_in(intc, sc->info->irqmap[ctrl]);
 }
 
 static void aspeed_soc_init(Object *obj)
@@ -175,8 +254,13 @@ static void aspeed_soc_init(Object *obj)
     object_property_add_alias(obj, "hw-prot-key", OBJECT(&s->scu),
                               "hw-prot-key", &error_abort);
 
-    sysbus_init_child_obj(obj, "vic", OBJECT(&s->vic), sizeof(s->vic),
-                          TYPE_ASPEED_VIC);
+    if (ASPEED_IS_AST2600(sc->info->silicon_rev)) {
+        sysbus_init_child_obj(obj, "a7mpcore", &s->a7mpcore,
+                              sizeof(s->a7mpcore), TYPE_A15MPCORE_PRIV);
+    } else {
+        sysbus_init_child_obj(obj, "vic", OBJECT(&s->vic), sizeof(s->vic),
+                              TYPE_ASPEED_VIC);
+    }
 
     sysbus_init_child_obj(obj, "rtc", OBJECT(&s->rtc), sizeof(s->rtc),
                           TYPE_ASPEED_RTC);
@@ -275,10 +359,53 @@ static void aspeed_soc_realize(DeviceState *dev, Error **errp)
 
     /* CPU */
     for (i = 0; i < s->num_cpus; i++) {
+        if (ASPEED_IS_AST2600(sc->info->silicon_rev)) {
+            object_property_set_int(OBJECT(&s->cpu[i]), QEMU_PSCI_CONDUIT_SMC,
+                                    "psci-conduit", &error_abort);
+            if (s->num_cpus > 1) {
+                object_property_set_int(OBJECT(&s->cpu[i]), ASPEED_A7MPCORE_ADDR,
+                                        "reset-cbar", &error_abort);
+            }
+
+            /*
+             * TODO: the secondary CPUs are started and a boot helper
+             * is needed when using -kernel
+             */
+        }
+
         object_property_set_bool(OBJECT(&s->cpu[i]), true, "realized", &err);
         if (err) {
             error_propagate(errp, err);
             return;
+        }
+    }
+
+    /* A7MPCORE */
+    if (ASPEED_IS_AST2600(sc->info->silicon_rev)) {
+        qemu_irq irq;
+
+        object_property_set_int(OBJECT(&s->a7mpcore), s->num_cpus, "num-cpu",
+                                &error_abort);
+        object_property_set_int(OBJECT(&s->a7mpcore),
+                                ASPEED_SOC_AST2600_MAX_IRQ + GIC_INTERNAL,
+                                "num-irq", &error_abort);
+
+        object_property_set_bool(OBJECT(&s->a7mpcore), true, "realized",
+                                 &error_abort);
+        sysbus_mmio_map(SYS_BUS_DEVICE(&s->a7mpcore), 0, ASPEED_A7MPCORE_ADDR);
+
+        for (i = 0; i < s->num_cpus; i++) {
+            SysBusDevice *sbd = SYS_BUS_DEVICE(&s->a7mpcore);
+            DeviceState  *d   = DEVICE(qemu_get_cpu(i));
+
+            irq = qdev_get_gpio_in(d, ARM_CPU_IRQ);
+            sysbus_connect_irq(sbd, i, irq);
+            irq = qdev_get_gpio_in(d, ARM_CPU_FIQ);
+            sysbus_connect_irq(sbd, i + s->num_cpus, irq);
+            irq = qdev_get_gpio_in(d, ARM_CPU_VIRQ);
+            sysbus_connect_irq(sbd, i + 2 * s->num_cpus, irq);
+            irq = qdev_get_gpio_in(d, ARM_CPU_VFIQ);
+            sysbus_connect_irq(sbd, i + 3 * s->num_cpus, irq);
         }
     }
 
@@ -301,16 +428,19 @@ static void aspeed_soc_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->scu), 0, sc->info->memmap[ASPEED_SCU]);
 
     /* VIC */
-    object_property_set_bool(OBJECT(&s->vic), true, "realized", &err);
-    if (err) {
-        error_propagate(errp, err);
-        return;
+    if (!ASPEED_IS_AST2600(sc->info->silicon_rev)) {
+        object_property_set_bool(OBJECT(&s->vic), true, "realized", &err);
+        if (err) {
+            error_propagate(errp, err);
+            return;
+        }
+        sysbus_mmio_map(SYS_BUS_DEVICE(&s->vic), 0,
+                        sc->info->memmap[ASPEED_VIC]);
+        sysbus_connect_irq(SYS_BUS_DEVICE(&s->vic), 0,
+                           qdev_get_gpio_in(DEVICE(&s->cpu), ARM_CPU_IRQ));
+        sysbus_connect_irq(SYS_BUS_DEVICE(&s->vic), 1,
+                           qdev_get_gpio_in(DEVICE(&s->cpu), ARM_CPU_FIQ));
     }
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->vic), 0, sc->info->memmap[ASPEED_VIC]);
-    sysbus_connect_irq(SYS_BUS_DEVICE(&s->vic), 0,
-                       qdev_get_gpio_in(DEVICE(&s->cpu), ARM_CPU_IRQ));
-    sysbus_connect_irq(SYS_BUS_DEVICE(&s->vic), 1,
-                       qdev_get_gpio_in(DEVICE(&s->cpu), ARM_CPU_FIQ));
 
     /* RTC */
     object_property_set_bool(OBJECT(&s->rtc), true, "realized", &err);
