@@ -44,6 +44,7 @@
 
 #define WDT_RESTART_MAGIC               0x4755
 
+#define AST2600_SCU_RESET_CONTROL1      (0x40 / 4)
 #define SCU_RESET_CONTROL1              (0x04 / 4)
 #define    SCU_RESET_SDRAM              BIT(0)
 
@@ -224,9 +225,14 @@ static void aspeed_wdt_reset(DeviceState *dev)
 static void aspeed_wdt_timer_expired(void *dev)
 {
     AspeedWDTState *s = ASPEED_WDT(dev);
+    uint32_t reset_ctrl_reg = SCU_RESET_CONTROL1;
+
+    if (ASPEED_IS_AST2600(s->scu->silicon_rev)) {
+        reset_ctrl_reg = AST2600_SCU_RESET_CONTROL1;
+    }
 
     /* Do not reset on SDRAM controller reset */
-    if (s->scu->regs[SCU_RESET_CONTROL1] & SCU_RESET_SDRAM) {
+    if (s->scu->regs[reset_ctrl_reg] & SCU_RESET_SDRAM) {
         timer_del(s->timer);
         s->regs[WDT_CTRL] = 0;
         return;
