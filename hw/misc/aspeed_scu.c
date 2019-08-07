@@ -99,6 +99,8 @@
 #define AST2600_CLK_STOP_CTRL2     TO_REG(0x90)
 #define AST2600_CLK_STOP_CTR2L_CLR TO_REG(0x94)
 #define AST2600_SDRAM_HANDSHAKE   TO_REG(0x100)
+#define AST2600_HPLL              TO_REG(0x200)
+#define AST2600_HPLL_EXT          TO_REG(0x204)
 #define AST2600_MPLL_EXT          TO_REG(0x224)
 #define AST2600_EPLL_EXT          TO_REG(0x244)
 #define AST2600_CLK_SEL           TO_REG(0x300)
@@ -192,6 +194,8 @@ static const uint32_t ast2600_a0_resets[ASPEED_AST2600_SCU_NR_REGS] = {
     [AST2600_CLK_STOP_CTRL]     = 0xEFF43E8B,
     [AST2600_CLK_STOP_CTRL2]    = 0xFFF0FFF0,
     [AST2600_SDRAM_HANDSHAKE]   = 0x00000040,  /* SoC completed DRAM init */
+    [AST2600_HPLL]              = 0x1000405F,
+    [AST2600_HPLL_EXT]          = 0x31,
 };
 
 static uint32_t aspeed_scu_get_random(void)
