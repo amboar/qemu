@@ -89,6 +89,7 @@
 
 #define AST2600_PROT_KEY          TO_REG(0x00)
 #define AST2600_SILICON_REV       TO_REG(0x04)
+#define AST2600_SILICON_REV2      TO_REG(0x14)
 #define AST2600_SYS_RST_CTRL      TO_REG(0x40)
 #define AST2600_SYS_RST_CTRL_CLR  TO_REG(0x44)
 #define AST2600_SYS_RST_CTRL2     TO_REG(0x50)
@@ -184,6 +185,8 @@ static const uint32_t ast2500_a1_resets[ASPEED_SCU_NR_REGS] = {
 };
 
 static const uint32_t ast2600_a0_resets[ASPEED_AST2600_SCU_NR_REGS] = {
+    [AST2600_SILICON_REV]       = AST2600_SILICON_REV,
+    [AST2600_SILICON_REV2]      = AST2600_SILICON_REV,
     [AST2600_SYS_RST_CTRL]      = 0xF7CFFEDC | 0x100,
     [AST2600_SYS_RST_CTRL2]     = 0xFFFFFFFC,
     [AST2600_CLK_STOP_CTRL]     = 0xEFF43E8B,
@@ -367,6 +370,7 @@ static void aspeed_ast2600_scu_write(void *opaque, uint64_t offset,
 
     case AST2600_RNG_DATA:
     case AST2600_SILICON_REV:
+    case AST2600_SILICON_REV2:
         /* Add read only registers here */
         qemu_log_mask(LOG_GUEST_ERROR,
                       "%s: Write to read-only offset 0x%" HWADDR_PRIx "\n",
@@ -468,9 +472,10 @@ static uint32_t aspeed_2500_scu_calc_hpll(AspeedSCUState *s, uint32_t hpll_reg)
 
 static void aspeed_ast2600_reset(AspeedSCUState *s)
 {
-    s->regs[SILICON_REV] = s->silicon_rev;
-    s->regs[HW_STRAP1] = s->hw_strap1;
-    s->regs[HW_STRAP2] = s->hw_strap2;
+    s->regs[AST2600_SILICON_REV] = s->silicon_rev;
+    s->regs[AST2600_SILICON_REV2] = s->silicon_rev;
+    s->regs[AST2600_HW_STRAP1] = s->hw_strap1;
+    s->regs[AST2600_HW_STRAP2] = s->hw_strap2;
     s->regs[PROT_KEY] = s->hw_prot_key;
 }
 
