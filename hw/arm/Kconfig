@@ -355,6 +355,7 @@ config ASPEED_SOC
     select TMP421
     select IBM_CFFPS
     select IR35221
+    select APB2OPB_ASPEED
 
 config MPS2
     bool

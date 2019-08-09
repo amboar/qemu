@@ -39,6 +39,7 @@ devices-dirs-y += xen/
 devices-dirs-$(CONFIG_MEM_DEVICE) += mem/
 devices-dirs-y += semihosting/
 devices-dirs-y += smbios/
+devices-dirs-$(CONFIG_FSI) += fsi/
 endif
 
 common-obj-y += $(devices-dirs-y)

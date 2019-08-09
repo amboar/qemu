@@ -361,7 +361,7 @@ static void aspeed_soc_init(Object *obj)
 
     if (ASPEED_IS_AST2600(sc->info->silicon_rev)) {
         sysbus_init_child_obj(obj, "fsi[*]", OBJECT(&s->fsi[0]),
-                              sizeof(s->fsi[0]), TYPE_ASPEED_FSI);
+                              sizeof(s->fsi[0]), TYPE_ASPEED_APB2OPB);
     }
 }
 

@@ -463,6 +463,9 @@ static void object_initialize_with_type(void *data, size_t size, TypeImpl *type)
     object_ref(obj);
     obj->properties = g_hash_table_new_full(g_str_hash, g_str_equal,
                                             NULL, object_property_free);
+    if (!strcmp("opb", type->name)) {
+        printf("type: %s, properties: %p\n", type->name, obj->properties);
+    }
     object_init_with_type(obj, type);
     object_post_init_with_type(obj, type);
 }

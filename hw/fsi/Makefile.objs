@@ -1,0 +1,4 @@
+obj-$(CONFIG_OPB) += opb.o
+obj-$(CONFIG_FSI) += fsi.o fsi-master.o fsi-slave.o cfam.o
+obj-$(CONFIG_FSI) += engine-scratchpad.o
+obj-$(CONFIG_APB2OPB_ASPEED) += aspeed-apb2opb.o
