@@ -212,6 +212,8 @@ static void aspeed_soc_init(Object *obj)
     }
 
     object_initialize_child(obj, "lpc", &s->lpc, TYPE_ASPEED_LPC);
+
+    object_initialize_child(obj, "ibt", &s->ibt, TYPE_ASPEED_IBT);
 }
 
 static void aspeed_soc_realize(DeviceState *dev, Error **errp)
@@ -425,6 +427,22 @@ static void aspeed_soc_realize(DeviceState *dev, Error **errp)
 
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->lpc), 1 + aspeed_lpc_kcs_4,
                        qdev_get_gpio_in(DEVICE(&s->lpc), aspeed_lpc_kcs_4));
+
+    /*
+     * iBT
+     *
+     * The iBT device is really an LPC subdevice but has its own separate model.
+     * Connect its MMIOs to the LPC MMIO region and hook up its IRQ such that it
+     * will trigger the shared LPC IRQ.
+     */
+    if (!sysbus_realize(SYS_BUS_DEVICE(&s->ibt), errp)) {
+        return;
+    }
+    memory_region_add_subregion(&s->lpc.iomem,
+                   sc->memmap[ASPEED_DEV_IBT] - sc->memmap[ASPEED_DEV_LPC],
+                   &s->ibt.iomem);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->ibt), 0,
+                       qdev_get_gpio_in(DEVICE(&s->lpc), aspeed_lpc_ibt));
 }
 static Property aspeed_soc_properties[] = {
     DEFINE_PROP_LINK("dram", AspeedSoCState, dram_mr, TYPE_MEMORY_REGION,

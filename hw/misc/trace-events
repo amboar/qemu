@@ -243,3 +243,11 @@ pca955x_gpio_change(const char *description, unsigned id, unsigned prev_state, u
 bcm2835_cprman_read(uint64_t offset, uint64_t value) "offset:0x%" PRIx64 " value:0x%" PRIx64
 bcm2835_cprman_write(uint64_t offset, uint64_t value) "offset:0x%" PRIx64 " value:0x%" PRIx64
 bcm2835_cprman_write_invalid_magic(uint64_t offset, uint64_t value) "offset:0x%" PRIx64 " value:0x%" PRIx64
+
+# aspeed_ibt.c
+
+aspeed_ibt_chr_dump_msg(const char *func, const char *buf, uint32_t len) "%s: %s #%d bytes"
+aspeed_ibt_chr_event(bool connected) "connected:%d"
+aspeed_ibt_read(uint64_t offset, uint64_t value) "offset:0x%" PRIx64 " value:0x%" PRIx64
+aspeed_ibt_write(uint64_t offset, uint64_t value) "offset:0x%" PRIx64 " value:0x%" PRIx64
+aspeed_ibt_event(const char* event) "%s"
